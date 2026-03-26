@@ -27,7 +27,7 @@ app.get('/', async (req, res) => {
     let sqlAuthors = `SELECT authorId, firstName, lastName FROM authors ORDER BY lastName`;
     const[authors] = await pool.query(sqlAuthors);
     
-    // Fetch Distinct Categories (this is extra credit)
+    // Fetch Distinct Categories (extra credit)
     let sqlCategories = `SELECT DISTINCT(category) FROM quotes ORDER BY category`;
     const [categories] = await pool.query(sqlCategories);
 
@@ -38,7 +38,7 @@ app.get('/', async (req, res) => {
 app.get("/searchByKeyword", async(req, res) => {
    try {
         let keyword = req.query.keyword;
-        let sql = `SELECT quote, firstName, lastName FROM quotes NATURAL JOIN authors WHERE quote LIKE ?`;
+        let sql = `SELECT quote, firstName, lastName, authorId FROM quotes NATURAL JOIN authors WHERE quote LIKE ?`;
         let sqlParams = [`%${keyword}%`]; // Prevents SQL Injection!
         
         const [rows] = await pool.query(sql, sqlParams); 
@@ -53,7 +53,7 @@ app.get("/searchByKeyword", async(req, res) => {
 app.get("/searchByAuthor", async(req, res) => {
     try {
          let authorId = req.query.authorId;
-         let sql = `SELECT quote, firstName, lastName FROM quotes NATURAL JOIN authors WHERE authorId = ?`;
+         let sql = `SELECT quote, firstName, lastName, authorId FROM quotes NATURAL JOIN authors WHERE authorId = ?`;
          let sqlParams = [authorId];
          
          const [rows] = await pool.query(sql, sqlParams); 
@@ -68,7 +68,7 @@ app.get("/searchByAuthor", async(req, res) => {
 app.get("/searchByCategory", async(req, res) => {
     try {
          let category = req.query.category;
-         let sql = `SELECT quote, firstName, lastName FROM quotes NATURAL JOIN authors WHERE category = ?`;
+         let sql = `SELECT quote, firstName, lastName, authorId FROM quotes NATURAL JOIN authors WHERE category = ?`;
          let sqlParams = [category];
          
          const [rows] = await pool.query(sql, sqlParams); 
@@ -85,7 +85,7 @@ app.get("/searchByLikes", async(req, res) => {
          let min = req.query.minLikes || 0;
          let max = req.query.maxLikes || 1000000;
          // Grab likes, sort descending so the best quotes are on top
-         let sql = `SELECT quote, firstName, lastName, likes FROM quotes NATURAL JOIN authors WHERE likes BETWEEN ? AND ? ORDER BY likes DESC`;
+         let sql = `SELECT quote, firstName, lastName, authorId, likes FROM quotes NATURAL JOIN authors WHERE likes BETWEEN ? AND ? ORDER BY likes DESC`;
          let sqlParams = [min, max];
          
          const[rows] = await pool.query(sql, sqlParams); 
@@ -100,7 +100,7 @@ app.get("/searchByLikes", async(req, res) => {
 // ROUTE: search by gender (from user story requirements)
 app.get("/searchByGender", async(req, res) => {
     try {
-         let sex = req.query.sex; // grabs 'M' or 'F' from the dropdown
+         let sex = req.query.sex; // gets 'M' or 'F' from the dropdown
          let sql = `SELECT quote, firstName, lastName, authorId FROM quotes NATURAL JOIN authors WHERE sex = ?`;
          let sqlParams = [sex];
          
