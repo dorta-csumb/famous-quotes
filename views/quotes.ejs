@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('partials/head') %>
+    <title>Search Results</title>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1><%= searchType %></h1>
+        <a href="/" class="btn btn-secondary mb-4">Back to Search</a>
+
+        <% for (let i of rows) { %>
+            <div class="card p-3 mb-3 quote-card shadow-sm">
+                <h4>"<%= i.quote %>"</h4>
+                <!-- Author name is clickable and passes their ID to the authorInfo route -->
+                <a href="/authorInfo?authorId=<%= i.authorId %>" class="author-name">
+                    - <%= i.firstName %> <%= i.lastName %>
+                </a>
+            </div>
+        <% } %>
+    </div>
+    <%- include('partials/footer') %>
+</body>
+</html>

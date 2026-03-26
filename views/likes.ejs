@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('partials/head') %>
+    <title>Likes Search Results</title>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1><%= searchType %></h1>
+        <a href="/" class="btn btn-secondary mb-4">Back to Search</a>
+
+        <% for (let i of rows) { %>
+            <div class="card p-3 mb-3 quote-card shadow-sm">
+                <h4>"<%= i.quote %>"</h4>
+                <a href="/authorInfo?authorId=<%= i.authorId %>" class="author-name">
+                    - <%= i.firstName %> <%= i.lastName %>
+                </a>
+                <p class="text-success mt-2 mb-0"><strong>Likes: <%= i.likes %></strong></p>
+            </div>
+        <% } %>
+    </div>
+    <%- include('partials/footer') %>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('partials/head') %>
+    <title>Lab 6: Quote Finder</title>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="mb-4 text-primary">Famous Quote Finder</h1>
+
+        <!-- Search by Keyword -->
+        <form action="/searchByKeyword" method="GET" class="mb-3"> 
+            <label>Keyword:</label> 
+            <input type="text" name="keyword" required>
+            <button class="btn btn-outline-primary btn-sm">Search by Keyword</button>
+        </form>
+
+        <!-- Search by Author -->
+        <form action="/searchByAuthor" method="GET" class="mb-3">
+            <label>Author:</label> 
+            <select name="authorId" required>
+                <option value="">Select an Author</option>
+                <% for (let i of authors) { %>
+                    <option value="<%= i.authorId %>">
+                        <%= i.firstName %> <%= i.lastName %>
+                    </option>
+                <% } %>
+            </select>
+            <button class="btn btn-outline-primary btn-sm">Search by Author</button>
+        </form>
+
+        <!-- Search by Gender -->
+        <form action="/searchByGender" method="GET" class="mb-3">
+            <label>Gender:</label> 
+            <select name="sex" required>
+                <option value="">Select Gender</option>
+                <option value="M">Male</option>
+                <option value="F">Female</option>
+            </select>
+            <button class="btn btn-outline-primary btn-sm">Search by Gender</button>
+        </form>
+
+        <!-- Search by Category -->
+        <form action="/searchByCategory" method="GET" class="mb-3">
+            <label>Category:</label> 
+            <select name="category" required>
+                <option value="">Select Category</option>
+                <% for (let i of categories) { %>
+                    <option value="<%= i.category %>">
+                        <%= i.category %>
+                    </option>
+                <% } %>
+            </select>
+            <button class="btn btn-outline-primary btn-sm">Search by Category</button>
+        </form>
+
+        <!-- Search by Likes -->
+        <form action="/searchByLikes" method="GET" class="mb-3 border p-3 bg-white" style="max-width: 400px;">
+            <label>Min Likes:</label> 
+            <input type="number" name="minLikes" required> <br><br>
+            <label>Max Likes:</label> 
+            <input type="number" name="maxLikes" required> <br><br>
+            <button class="btn btn-success btn-sm">Search by Likes</button>
+        </form>
+
+    </div>
+    <%- include('partials/footer') %>
+</body>
+</html>
