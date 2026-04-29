@@ -5,6 +5,12 @@
     <title>Author Profile</title>
 </head>
 <body>
+// The following line includes the navigation bar from the 'partials/nav.ejs' file. This allows us to reuse the same navigation bar across multiple pages of our application, ensuring consistency and reducing code duplication. By using EJS's include syntax, we can easily maintain and update the navigation bar in one place, and those changes will be reflected on all pages that include it.
+<%- include('partials/nav') %>
+    <div class="container mt-4">
+
+    // The following line displays the author's full name as a heading. It uses EJS syntax to access the 'author' object passed from the server and concatenates the 'firstName' and 'lastName' properties to create the full name. This allows us to dynamically display the author's name based on the data retrieved from the database.
+        <h1 class="text-primary"><%= author.firstName %> <%= author.lastName %></h1>
     <div class="container mt-4 text-center">
         <h1 class="text-primary"><%= author.firstName %> <%= author.lastName %></h1>
         <a href="/" class="btn btn-secondary mb-4">Back to Search</a>

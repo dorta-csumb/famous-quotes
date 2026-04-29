@@ -1,0 +1,26 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 p-3 shadow-sm">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="/">Famous Quotes</a>
+        <div class="d-flex">
+            <ul class="navbar-nav flex-row gap-3">
+                <li class="nav-item">
+                    <a class="nav-link text-white" href="/">Search</a>
+                </li>
+                
+                <!-- Dynamic Auth Rendering which means "show different menu items based on whether the user is logged in or not" -->
+                <% if (authenticated) { %>
+                    <li class="nav-item">
+                        <a class="nav-link text-info fw-bold" href="/admin">Admin Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-danger fw-bold" href="/logout">Logout (<%= userFullName %>)</a>
+                    </li>
+                <% } else { %>
+                    <li class="nav-item">
+                        <a class="nav-link text-warning fw-bold" href="/login">Admin Login</a>
+                    </li>
+                <% } %>
+            </ul>
+        </div>
+    </div>
+</nav>
