@@ -12,11 +12,13 @@
 
                 // display error  in red text on the page instead of an alert box
                 errorDiv.textContent = "Keyword must be at least 3 characters long, bro.";
+
+                return false; //prevent form submission (forcefully exit the function here  to avoid any unintended consequences of the form submitting after the event.preventDefault() line)
             }else{
                 // clear error message if validation passes
                 errorDiv.textContent = ""; 
+                return true; //allow form submission
             }
-            return true; //allow form submission
 
         }
             
@@ -50,7 +52,8 @@ let authorLinks = document.querySelectorAll(".authorNames");
             document.querySelector("#authorProfession").textContent = data[0].profession;
             
             // ADDED: Populating the new fields required by the rubric (Born, Country, Bio)
-            document.querySelector("#authorDob").textContent = data[0].dob;
+            // FIX: Use .split("T")[0] to chop off the time and timezone characters from the date string, leaving just the date in YYYY-MM-DD format. This is necessary because the database stores dates in a datetime format, which includes time and timezone information that we don't want to display on the frontend.
+            document.querySelector("#authorDob").textContent = data[0].dob.split("T")[0];
             document.querySelector("#authorCountry").textContent = data[0].country;
             document.querySelector("#authorBio").textContent = data[0].biography;
             
@@ -58,7 +61,7 @@ let authorLinks = document.querySelectorAll(".authorNames");
             // Using a standard if/else block to make the logic easy to visualize
             if (data[0].dod != null) {
                 // If the database has a Date of Death, display it
-                document.querySelector("#authorDod").textContent = data[0].dod; 
+                document.querySelector("#authorDod").textContent = data[0].dod.split("T")[0]; 
             } else {
                 // If the Date of Death is null, display the word "Present"
                 document.querySelector("#authorDod").textContent = "Present"; 
@@ -121,7 +124,7 @@ app.use(express.urlencoded({extended:true}));
 const pool = mysql.createPool({
     host: "bqmayq5x95g1sgr9.cbetxkdyhwsb.us-east-1.rds.amazonaws.com",
     user: process.env.DB_USERNAME,
-    password: process.env.DB_PWD,
+    password: process.env.DB_PASSWORD,
     database: "he5dh1d9q9dzzeme",
     connectionLimit: 10,
     waitForConnections: true
@@ -283,7 +286,9 @@ app.listen(3000, ()=>{
         <% for (let i of rows) { %>
             <div class="card p-3 mb-3 quote-card shadow-sm">
                 <h4>"<%= i.quote %>"</h4>
-                <a href="/authorInfo?authorId=<%= i.authorId %>" class="author-name">
+                
+                <!-- NEW: Changed href to "#" and added class="authorNames" and authorId so JS picks it up -->
+                <a href="#" class="authorNames author-name" authorId="<%= i.authorId %>">
                     - <%= i.firstName %> <%= i.lastName %>
                 </a>
                 <p class="text-success mt-2 mb-0"><strong>Likes: <%= i.likes %></strong></p>
@@ -291,6 +296,29 @@ app.listen(3000, ()=>{
         <% } %>
     </div>
     <%- include('partials/footer') %>
+
+    <!-- NEW: Added the modal HTML so it exists on the likes page -->
+    <div>
+        <dialog id="authorModal" class="p-4 border-0 shadow rounded" style="max-width: 500px;" > 
+        <div id="authorInfo" class="text-center" >
+            <h2 id="authorName" class="text-primary mb-3"></h2>
+            <img id="authorPicture" class="img-fluid rounded mb-3" style="max-height: 250px; object-fit: contain;" alt="Author Picture">
+            <p><strong>Profession:</strong> <span id="authorProfession"></span></p>
+            <p><strong>Born:</strong> <span id="authorDob"></span> in <span id="authorCountry"></span></p>
+            <p><strong>Died:</strong> <span id="authorDod"></span></p>
+            <hr>
+            <p id="authorBio" class="text-start"></p>
+            <button id="closeModal" class="btn btn-secondary mt-3">Close</button>
+        </div>
+        </dialog>
+    </div>
+ 
+    <!-- NEW: Added the JS script so clicking the author actually opens the modal -->
+    <script src="/js/quotes.js"></script>
+
+
+<!-- the NEW additions ensure the modal functionality works on the likes page because the modal HTML and JS script are now included, allowing users to click on an author's name and view their profile in a modal window. -->
+
 </body>
 </html>
 

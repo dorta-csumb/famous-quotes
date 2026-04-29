@@ -6,6 +6,10 @@ import mysql from 'mysql2/promise';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+// NEW: Lab 7 imports
+import session from 'express-session';
+import bcrypt from 'bcrypt';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -19,6 +23,19 @@ app.use(express.static(path.join(__dirname, 'public')));
 //for Express to get values using the POST method
 app.use(express.urlencoded({extended:true}));
 
+// NEW: Lab 7 Session Setup (From Dr. Lara's class transcript)
+app.use(session({
+    secret: 'super_secret_cookie_key', // In production, this should be in .env
+    resave: false,
+    saveUninitialized: true
+}));
+
+// NEW: Make session data available to all EJS templates (Middleware from Dr. Lara's transcript)
+app.use((req, res, next) => {
+    res.locals.authenticated = req.session.authenticated || false;
+    res.locals.userFullName = req.session.userFullName || '';
+    next();
+});
 
 //setting up database connection pool, replace values in red
 const pool = mysql.createPool({
