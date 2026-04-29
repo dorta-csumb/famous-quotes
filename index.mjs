@@ -121,7 +121,7 @@ app.get('/logout', (req, res) => {
 });
 
 
-// ============================================
+// ===========================================
 // LAB 7: admin dashboard & delete routes
 
 // Admin Dashboard (Protected)
@@ -174,7 +174,72 @@ app.post('/admin/quote/delete', isAuthenticated, async (req, res) => {
         res.status(500).send("Error deleting quote.");
     }
 });
-// ============================================
+// ==========================
+// LAB 7: add & edit routes
+
+//ADD AUTHOR Routes
+app.get('/admin/author/add', isAuthenticated, (req, res) => {
+    res.render('addAuthor.ejs');
+});
+
+app.post('/admin/author/add', isAuthenticated, async (req, res) => {
+    let { firstName, lastName, dob, dod, sex, profession, country, portrait, biography } = req.body;
+    dod = dod ? dod : null; // If they are alive, dod will be empty, so we make it null
+    
+    let sql = `INSERT INTO authors (firstName, lastName, dob, dod, sex, profession, country, portrait, biography) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    await pool.query(sql,[firstName, lastName, dob, dod, sex, profession, country, portrait, biography]);
+    res.redirect('/admin');
+});
+
+//EDIT AUTHOR Routes
+app.get('/admin/author/edit', isAuthenticated, async (req, res) => {
+    let authorId = req.query.authorId;
+    // Using DATE_FORMAT so the dates neatly slide into the HTML <input type="date">
+    let sql = `SELECT authorId, firstName, lastName, DATE_FORMAT(dob, '%Y-%m-%d') AS dob, DATE_FORMAT(dod, '%Y-%m-%d') AS dod, sex, profession, country, portrait, biography FROM authors WHERE authorId = ?`;
+    const [rows] = await pool.query(sql, [authorId]);
+    res.render('editAuthor.ejs', { author: rows[0] });
+});
+
+app.post('/admin/author/edit', isAuthenticated, async (req, res) => {
+    let { authorId, firstName, lastName, dob, dod, sex, profession, country, portrait, biography } = req.body;
+    dod = dod ? dod : null;
+    
+    let sql = `UPDATE authors SET firstName=?, lastName=?, dob=?, dod=?, sex=?, profession=?, country=?, portrait=?, biography=? WHERE authorId=?`;
+    await pool.query(sql,[firstName, lastName, dob, dod, sex, profession, country, portrait, biography, authorId]);
+    res.redirect('/admin');
+});
+
+//ADD QUOTE Routes
+app.get('/admin/quote/add', isAuthenticated, async (req, res) => {
+    const [authors] = await pool.query('SELECT authorId, firstName, lastName FROM authors ORDER BY lastName');
+    const [categories] = await pool.query('SELECT DISTINCT(category) FROM quotes ORDER BY category');
+    res.render('addQuote.ejs', { authors, categories });
+});
+
+app.post('/admin/quote/add', isAuthenticated, async (req, res) => {
+    let { quote, authorId, category, likes } = req.body;
+    let sql = `INSERT INTO quotes (quote, authorId, category, likes) VALUES (?, ?, ?, ?)`;
+    await pool.query(sql,[quote, authorId, category, likes]);
+    res.redirect('/admin');
+});
+
+//EDIT QUOTE Routes
+app.get('/admin/quote/edit', isAuthenticated, async (req, res) => {
+    let quoteId = req.query.quoteId;
+    const [quoteRows] = await pool.query('SELECT * FROM quotes WHERE quoteId = ?', [quoteId]);
+    const [authors] = await pool.query('SELECT authorId, firstName, lastName FROM authors ORDER BY lastName');
+    const [categories] = await pool.query('SELECT DISTINCT(category) FROM quotes ORDER BY category');
+    
+    res.render('editQuote.ejs', { quote: quoteRows[0], authors, categories });
+});
+
+app.post('/admin/quote/edit', isAuthenticated, async (req, res) => {
+    let { quoteId, quote, authorId, category, likes } = req.body;
+    let sql = `UPDATE quotes SET quote=?, authorId=?, category=?, likes=? WHERE quoteId=?`;
+    await pool.query(sql,[quote, authorId, category, likes, quoteId]);
+    res.redirect('/admin');
+});
+// =============
 
 // ROUTE 2: searching by keyword 
 app.get("/searchByKeyword", async(req, res) => {

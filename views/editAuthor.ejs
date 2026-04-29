@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('partials/head') %>
+    <title>Edit Author</title>
+</head>
+<body>
+    <%- include('partials/nav') %>
+    <div class="container mt-4" style="max-width: 600px;">
+        <h2 class="text-primary mb-4">Edit Author</h2>
+        <form action="/admin/author/edit" method="POST" class="card p-4 shadow-sm">
+            <input type="hidden" name="authorId" value="<%= author.authorId %>">
+            
+            <div class="row">
+                <div class="col-md-6 mb-3"><label>First Name:</label><input type="text" name="firstName" value="<%= author.firstName %>" class="form-control" required></div>
+                <div class="col-md-6 mb-3"><label>Last Name:</label><input type="text" name="lastName" value="<%= author.lastName %>" class="form-control" required></div>
+                <div class="col-md-6 mb-3"><label>Date of Birth:</label><input type="date" name="dob" value="<%= author.dob %>" class="form-control" required></div>
+                <div class="col-md-6 mb-3"><label>Date of Death (Leave blank if alive):</label><input type="date" name="dod" value="<%= author.dod %>" class="form-control"></div>
+                <div class="col-md-6 mb-3"><label>Sex (M/F):</label><input type="text" name="sex" value="<%= author.sex %>" class="form-control" maxlength="1" required></div>
+                <div class="col-md-6 mb-3"><label>Profession:</label><input type="text" name="profession" value="<%= author.profession %>" class="form-control" required></div>
+                <div class="col-md-12 mb-3"><label>Country:</label><input type="text" name="country" value="<%= author.country %>" class="form-control" required></div>
+                <div class="col-md-12 mb-3"><label>Portrait Image URL:</label><input type="url" name="portrait" value="<%= author.portrait %>" class="form-control" required></div>
+                <div class="col-md-12 mb-3"><label>Biography:</label><textarea name="biography" class="form-control" rows="4" required><%= author.biography %></textarea></div>
+            </div>
+            <button class="btn btn-primary fw-bold mt-2">Update Author</button>
+            <a href="/admin" class="btn btn-secondary mt-2">Cancel</a>
+        </form>
+    </div>
+    <%- include('partials/footer') %>
+</body>
+</html>

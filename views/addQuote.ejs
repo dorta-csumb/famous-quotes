@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('partials/head') %>
+    <title>Add Quote</title>
+</head>
+<body>
+    <%- include('partials/nav') %>
+    <div class="container mt-4" style="max-width: 600px;">
+        <h2 class="text-success mb-4">Add New Quote</h2>
+        <form action="/admin/quote/add" method="POST" class="card p-4 shadow-sm">
+            <div class="mb-3">
+                <label>Quote text:</label>
+                <textarea name="quote" class="form-control" rows="3" required></textarea>
+            </div>
+            <div class="mb-3">
+                <label>Author:</label>
+                <select name="authorId" class="form-control" required>
+                    <option value="">Select an Author...</option>
+                    <% for(let a of authors) { %>
+                        <option value="<%= a.authorId %>"><%= a.firstName %> <%= a.lastName %></option>
+                    <% } %>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label>Category (Type new or select from list):</label>
+                <input type="text" name="category" list="categoryList" class="form-control" required>
+                <datalist id="categoryList">
+                    <% for(let c of categories) { %>
+                        <option value="<%= c.category %>"></option>
+                    <% } %>
+                </datalist>
+            </div>
+            <div class="mb-3">
+                <label>Likes:</label>
+                <input type="number" name="likes" class="form-control" value="0" required>
+            </div>
+            <button class="btn btn-success fw-bold">Submit New Quote</button>
+            <a href="/admin" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+    <%- include('partials/footer') %>
+</body>
+</html>
