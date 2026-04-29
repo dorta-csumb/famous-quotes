@@ -1,9 +1,21 @@
+import 'dotenv/config';
 import express from 'express';
 import mysql from 'mysql2/promise';
 
-const app = express();
+// NEW: Dr. Lara's required fix for ESM __dirname
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+
+const app = express(); // this line means we are creating an Express application and storing it in the variable 'app'. We will use 'app' to define routes and middleware for our web server. We do this because Express provides a lot of functionality for building web applications, and we need to create an instance of it to use that functionality. By calling 'express()', we are initializing our application and can now use 'app' to set up our server, define routes, and handle requests and responses. Alternatively if we decided const app = node.js http module, we would have to write a lot more code to handle routing, parsing request bodies, and other common web server tasks that Express simplifies for us. So using Express allows us to write cleaner and more efficient code for our web application.
 app.set('view engine', 'ejs');
-app.use(express.static('public'));
+
+// NEW: safely binding the paths using __dirname and path.join, which is required for ESM modules. This allows us to use relative paths for our views and static files without running into issues with the current working directory.
+app.set('views', path.join(__dirname, 'views'));
+app.use(express.static(path.join(__dirname, 'public')));
 //for Express to get values using the POST method
 app.use(express.urlencoded({extended:true}));
 
@@ -11,8 +23,8 @@ app.use(express.urlencoded({extended:true}));
 //setting up database connection pool, replace values in red
 const pool = mysql.createPool({
     host: "bqmayq5x95g1sgr9.cbetxkdyhwsb.us-east-1.rds.amazonaws.com",
-    user: "jiarzphlrz71n5bx",
-    password: "g9cxkcpm4l369gzh",
+    user: process.env.DB_USERNAME,
+    password: process.env.DB_PWD,
     database: "he5dh1d9q9dzzeme",
     connectionLimit: 10,
     waitForConnections: true
@@ -38,7 +50,10 @@ app.get('/', async (req, res) => {
 app.get("/searchByKeyword", async(req, res) => {
    try {
         let keyword = req.query.keyword;
-        let sql = `SELECT quote, firstName, lastName, authorId FROM quotes NATURAL JOIN authors WHERE quote LIKE ?`;
+        let sql = `SELECT quote, firstName, lastName, authorId 
+                    FROM quotes 
+                    NATURAL JOIN authors 
+                    WHERE quote LIKE ?`;
         let sqlParams = [`%${keyword}%`]; // Prevents SQL Injection!
         
         const [rows] = await pool.query(sql, sqlParams); 
@@ -53,7 +68,10 @@ app.get("/searchByKeyword", async(req, res) => {
 app.get("/searchByAuthor", async(req, res) => {
     try {
          let authorId = req.query.authorId;
-         let sql = `SELECT quote, firstName, lastName, authorId FROM quotes NATURAL JOIN authors WHERE authorId = ?`;
+         let sql = `SELECT quote, firstName, lastName, authorId 
+                    FROM quotes 
+                    NATURAL JOIN authors 
+                    WHERE authorId = ?`;
          let sqlParams = [authorId];
          
          const [rows] = await pool.query(sql, sqlParams); 
@@ -122,6 +140,25 @@ app.get("/authorInfo", async(req, res) => {
          const [rows] = await pool.query(sql, sqlParams); 
          // Pass the single author record to a new author.ejs view
          res.render("author.ejs", { author: rows[0] });
+     } catch (err) {
+         console.error("Database error:", err);
+         res.status(500).send("Database error!");
+     }
+});
+
+// ROUTE: API to get the author infor based on an authorId (for extra credit AJAX)
+app.get('/api/author/:author_Id', async(req, res) => {
+    console.log(req);
+    try {
+         let authorId = req.params.author_Id;
+         let sql = `SELECT * 
+                    FROM authors 
+                    WHERE authorId = ?`; //? prevents SQL Injection
+         let sqlParams = [authorId];
+         
+         const [authorInfo] = await pool.query(sql,[authorId]); 
+         // Pass the single author record to a new author.ejs view
+         res.send(authorInfo);//displays info in JSON format, can be used by AJAX on the frontend
      } catch (err) {
          console.error("Database error:", err);
          res.status(500).send("Database error!");

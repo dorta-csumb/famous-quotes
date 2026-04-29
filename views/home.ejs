@@ -9,10 +9,12 @@
         <h1 class="mb-4 text-primary">Famous Quote Finder</h1>
 
         <!-- Search by Keyword -->
-        <form action="/searchByKeyword" method="GET" class="mb-3"> 
+        <form id="searchByKeywordForm" action="/searchByKeyword" method="GET" class="mb-3"> 
             <label>Keyword:</label> 
             <input type="text" name="keyword" required>
             <button class="btn btn-outline-primary btn-sm">Search by Keyword</button>
+
+            <div id="keywordError" class="text-danger mt-2 fw-bold"></div>
         </form>
 
         <!-- Search by Author -->
@@ -65,5 +67,7 @@
 
     </div>
     <%- include('partials/footer') %>
+
+    <script src="/js/home.js"></script>
 </body>
 </html>

@@ -1,0 +1,472 @@
+===== FILE: ./public/js/home.js =====
+ document.querySelector("#searchByKeywordForm").addEventListener("submit", validateKeywordForm);
+
+        //ensure that keyword has at least 3 characters
+        function validateKeywordForm(event){
+            let keyword = document.querySelector("input[name='keyword']").value;
+            let errorDiv = document.querySelector("#keywordError");
+
+            if(keyword.length < 3){
+                // stop form submission properly
+                event.preventDefault();
+
+                // display error  in red text on the page instead of an alert box
+                errorDiv.textContent = "Keyword must be at least 3 characters long, bro.";
+            }else{
+                // clear error message if validation passes
+                errorDiv.textContent = ""; 
+            }
+            return true; //allow form submission
+
+        }
+            
+
+===== FILE: ./public/js/quotes.js =====
+// This file is for the quotes.ejs page, which is the page that displays all the quotes and their authors. We will add an event listener to each author name, so that when the user clicks on an author name, we will display a modal with the author's information and their quotes.
+// A modal is a pop-up window that appears on top of the current page, and it can be used to display additional information without navigating away from the current page. In this case, we will use a modal to display the author's information and their quotes when the user clicks on an author name.
+let authorLinks = document.querySelectorAll(".authorNames");
+        for (let i of authorLinks) {
+            i.addEventListener("click", displayAuthorInfo);
+        }
+
+        // ADDED 'event' parameter here so we can properly stop the link from jumping.
+        // Relying on a hidden/global 'event' is deprecated and can cause errors in some modern browsers, 
+        // so we explicitly catch it in the parentheses.
+        async function displayAuthorInfo(event){
+            // prevent the <a> tag from jumping to the top of the page
+            event.preventDefault();
+
+            let authorId = this.getAttribute("authorId");
+            // alert("displaying author info for authorId..... " + authorId);
+            let url = "/api/author/" + authorId;
+            let response = await fetch(url);
+            let data = await response.json(); //data is everything from API route, which is author info and their quotes
+            
+            console.log(data[0].firstName); //data is an array of objects, we want the first object, and then the firstName property of that object
+            
+            // Populating the modal with the author's info using data[0] just like we did in class
+            document.querySelector("#authorName").textContent = data[0].firstName + " " + data[0].lastName;
+            document.querySelector("#authorPicture").src = data[0].portrait;
+            document.querySelector("#authorProfession").textContent = data[0].profession;
+            
+            // ADDED: Populating the new fields required by the rubric (Born, Country, Bio)
+            document.querySelector("#authorDob").textContent = data[0].dob;
+            document.querySelector("#authorCountry").textContent = data[0].country;
+            document.querySelector("#authorBio").textContent = data[0].biography;
+            
+            // check if the author is still alive
+            // Using a standard if/else block to make the logic easy to visualize
+            if (data[0].dod != null) {
+                // If the database has a Date of Death, display it
+                document.querySelector("#authorDod").textContent = data[0].dod; 
+            } else {
+                // If the Date of Death is null, display the word "Present"
+                document.querySelector("#authorDod").textContent = "Present"; 
+            }
+
+            //enable the modal
+            document.querySelector("#authorModal").showModal();
+        }
+
+        document.querySelector("#closeModal").addEventListener("click", ()=>{   
+            document.querySelector("#authorModal").close();
+        });
+
+===== FILE: ./package.json =====
+{
+  "name": "famous-quotes",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.mjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "dotenv": "^17.4.1",
+    "ejs": "^5.0.1",
+    "express": "^5.2.1",
+    "mysql2": "^3.20.0"
+  }
+}
+
+
+===== FILE: ./index.mjs =====
+import 'dotenv/config';
+import express from 'express';
+import mysql from 'mysql2/promise';
+
+// NEW: Dr. Lara's required fix for ESM __dirname
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+
+const app = express(); // this line means we are creating an Express application and storing it in the variable 'app'. We will use 'app' to define routes and middleware for our web server. We do this because Express provides a lot of functionality for building web applications, and we need to create an instance of it to use that functionality. By calling 'express()', we are initializing our application and can now use 'app' to set up our server, define routes, and handle requests and responses. Alternatively if we decided const app = node.js http module, we would have to write a lot more code to handle routing, parsing request bodies, and other common web server tasks that Express simplifies for us. So using Express allows us to write cleaner and more efficient code for our web application.
+app.set('view engine', 'ejs');
+
+// NEW: safely binding the paths using __dirname and path.join, which is required for ESM modules. This allows us to use relative paths for our views and static files without running into issues with the current working directory.
+app.set('views', path.join(__dirname, 'views'));
+app.use(express.static(path.join(__dirname, 'public')));
+//for Express to get values using the POST method
+app.use(express.urlencoded({extended:true}));
+
+
+//setting up database connection pool, replace values in red
+const pool = mysql.createPool({
+    host: "bqmayq5x95g1sgr9.cbetxkdyhwsb.us-east-1.rds.amazonaws.com",
+    user: process.env.DB_USERNAME,
+    password: process.env.DB_PWD,
+    database: "he5dh1d9q9dzzeme",
+    connectionLimit: 10,
+    waitForConnections: true
+});
+
+
+//routes
+
+// ROUTE 1: home page(Populates Authors and Categories dropdowns)
+app.get('/', async (req, res) => {
+    // Fetch Authors sorted by last name
+    let sqlAuthors = `SELECT authorId, firstName, lastName FROM authors ORDER BY lastName`;
+    const[authors] = await pool.query(sqlAuthors);
+    
+    // Fetch Distinct Categories (extra credit)
+    let sqlCategories = `SELECT DISTINCT(category) FROM quotes ORDER BY category`;
+    const [categories] = await pool.query(sqlCategories);
+
+    res.render('home.ejs', { authors, categories });
+});
+
+// ROUTE 2: searching by keyword 
+app.get("/searchByKeyword", async(req, res) => {
+   try {
+        let keyword = req.query.keyword;
+        let sql = `SELECT quote, firstName, lastName, authorId 
+                    FROM quotes 
+                    NATURAL JOIN authors 
+                    WHERE quote LIKE ?`;
+        let sqlParams = [`%${keyword}%`]; // Prevents SQL Injection!
+        
+        const [rows] = await pool.query(sql, sqlParams); 
+        res.render("quotes.ejs", { rows, searchType: "Keyword Search Results" });
+    } catch (err) {
+        console.error("Database error:", err);
+        res.status(500).send("Database error!");
+    }
+});
+
+// ROUTE 3: searching by author
+app.get("/searchByAuthor", async(req, res) => {
+    try {
+         let authorId = req.query.authorId;
+         let sql = `SELECT quote, firstName, lastName, authorId 
+                    FROM quotes 
+                    NATURAL JOIN authors 
+                    WHERE authorId = ?`;
+         let sqlParams = [authorId];
+         
+         const [rows] = await pool.query(sql, sqlParams); 
+         res.render("quotes.ejs", { rows, searchType: "Author Search Results" });
+     } catch (err) {
+         console.error("Database error:", err);
+         res.status(500).send("Database error!");
+     }
+ });
+
+// ROUTE 4: searching by category 
+app.get("/searchByCategory", async(req, res) => {
+    try {
+         let category = req.query.category;
+         let sql = `SELECT quote, firstName, lastName, authorId FROM quotes NATURAL JOIN authors WHERE category = ?`;
+         let sqlParams = [category];
+         
+         const [rows] = await pool.query(sql, sqlParams); 
+         res.render("quotes.ejs", { rows, searchType: "Category Search Results" });
+     } catch (err) {
+         console.error("Database error:", err);
+         res.status(500).send("Database error!");
+     }
+ });
+
+// ROUTE 5: searching by likes   
+app.get("/searchByLikes", async(req, res) => {
+    try {
+         let min = req.query.minLikes || 0;
+         let max = req.query.maxLikes || 1000000;
+         // Grab likes, sort descending so the best quotes are on top
+         let sql = `SELECT quote, firstName, lastName, authorId, likes FROM quotes NATURAL JOIN authors WHERE likes BETWEEN ? AND ? ORDER BY likes DESC`;
+         let sqlParams = [min, max];
+         
+         const[rows] = await pool.query(sql, sqlParams); 
+         // Rubric says: "Use a different view to display the results to include the number of likes." 
+         res.render("likes.ejs", { rows, searchType: "Likes Range Search Results" });
+     } catch (err) {
+         console.error("Database error:", err);
+         res.status(500).send("Database error!");
+     }
+ });
+
+// ROUTE: search by gender (from user story requirements)
+app.get("/searchByGender", async(req, res) => {
+    try {
+         let sex = req.query.sex; // gets 'M' or 'F' from the dropdown
+         let sql = `SELECT quote, firstName, lastName, authorId FROM quotes NATURAL JOIN authors WHERE sex = ?`;
+         let sqlParams = [sex];
+         
+         const [rows] = await pool.query(sql, sqlParams); 
+         res.render("quotes.ejs", { rows, searchType: "Gender Search Results" });
+     } catch (err) {
+         console.error("Database error:", err);
+         res.status(500).send("Database error!");
+     }
+});
+
+// ROUTE: author profile (Clicking an author's name)
+app.get("/authorInfo", async(req, res) => {
+    try {
+         let authorId = req.query.authorId;
+         let sql = `SELECT * FROM authors WHERE authorId = ?`;
+         let sqlParams = [authorId];
+         
+         const [rows] = await pool.query(sql, sqlParams); 
+         // Pass the single author record to a new author.ejs view
+         res.render("author.ejs", { author: rows[0] });
+     } catch (err) {
+         console.error("Database error:", err);
+         res.status(500).send("Database error!");
+     }
+});
+
+// ROUTE: API to get the author infor based on an authorId (for extra credit AJAX)
+app.get('/api/author/:author_Id', async(req, res) => {
+    console.log(req);
+    try {
+         let authorId = req.params.author_Id;
+         let sql = `SELECT * 
+                    FROM authors 
+                    WHERE authorId = ?`; //? prevents SQL Injection
+         let sqlParams = [authorId];
+         
+         const [authorInfo] = await pool.query(sql,[authorId]); 
+         // Pass the single author record to a new author.ejs view
+         res.send(authorInfo);//displays info in JSON format, can be used by AJAX on the frontend
+     } catch (err) {
+         console.error("Database error:", err);
+         res.status(500).send("Database error!");
+     }
+});
+
+//dbTest
+app.listen(3000, ()=>{
+    console.log("Express server running on port 3000")
+})
+
+
+===== FILE: ./views/likes.ejs =====
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('partials/head') %>
+    <title>Likes Search Results</title>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1><%= searchType %></h1>
+        <a href="/" class="btn btn-secondary mb-4">Back to Search</a>
+
+        <% for (let i of rows) { %>
+            <div class="card p-3 mb-3 quote-card shadow-sm">
+                <h4>"<%= i.quote %>"</h4>
+                <a href="/authorInfo?authorId=<%= i.authorId %>" class="author-name">
+                    - <%= i.firstName %> <%= i.lastName %>
+                </a>
+                <p class="text-success mt-2 mb-0"><strong>Likes: <%= i.likes %></strong></p>
+            </div>
+        <% } %>
+    </div>
+    <%- include('partials/footer') %>
+</body>
+</html>
+
+===== FILE: ./views/home.ejs =====
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('partials/head') %>
+    <title>Lab 6: Quote Finder</title>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="mb-4 text-primary">Famous Quote Finder</h1>
+
+        <!-- Search by Keyword -->
+        <form id="searchByKeywordForm" action="/searchByKeyword" method="GET" class="mb-3"> 
+            <label>Keyword:</label> 
+            <input type="text" name="keyword" required>
+            <button class="btn btn-outline-primary btn-sm">Search by Keyword</button>
+
+            <div id="keywordError" class="text-danger mt-2 fw-bold"></div>
+        </form>
+
+        <!-- Search by Author -->
+        <form action="/searchByAuthor" method="GET" class="mb-3">
+            <label>Author:</label> 
+            <select name="authorId" required>
+                <option value="">Select an Author</option>
+                <% for (let i of authors) { %>
+                    <option value="<%= i.authorId %>">
+                        <%= i.firstName %> <%= i.lastName %>
+                    </option>
+                <% } %>
+            </select>
+            <button class="btn btn-outline-primary btn-sm">Search by Author</button>
+        </form>
+
+        <!-- Search by Gender -->
+        <form action="/searchByGender" method="GET" class="mb-3">
+            <label>Gender:</label> 
+            <select name="sex" required>
+                <option value="">Select Gender</option>
+                <option value="M">Male</option>
+                <option value="F">Female</option>
+            </select>
+            <button class="btn btn-outline-primary btn-sm">Search by Gender</button>
+        </form>
+
+        <!-- Search by Category -->
+        <form action="/searchByCategory" method="GET" class="mb-3">
+            <label>Category:</label> 
+            <select name="category" required>
+                <option value="">Select Category</option>
+                <% for (let i of categories) { %>
+                    <option value="<%= i.category %>">
+                        <%= i.category %>
+                    </option>
+                <% } %>
+            </select>
+            <button class="btn btn-outline-primary btn-sm">Search by Category</button>
+        </form>
+
+        <!-- Search by Likes -->
+        <form action="/searchByLikes" method="GET" class="mb-3 border p-3 bg-white" style="max-width: 400px;">
+            <label>Min Likes:</label> 
+            <input type="number" name="minLikes" required> <br><br>
+            <label>Max Likes:</label> 
+            <input type="number" name="maxLikes" required> <br><br>
+            <button class="btn btn-success btn-sm">Search by Likes</button>
+        </form>
+
+    </div>
+    <%- include('partials/footer') %>
+
+    <script src="/js/home.js"></script>
+</body>
+</html>
+
+===== FILE: ./views/quotes.ejs =====
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('partials/head') %>
+    <title>Search Results</title>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1><%= searchType %></h1>
+        <a href="/" class="btn btn-secondary mb-4">Back to Search</a>
+
+        <% for (let i of rows) { %>
+            <div class="card p-3 mb-3 quote-card shadow-sm">
+                
+                <h4>"<%= i.quote %>"</h4>
+                <!-- Author name is clickable and passes their ID to the authorInfo route -->
+                <a href="#" class="authorNames" authorId="<%= i.authorId %>"> 
+                    - <%= i.firstName %> <%= i.lastName %>
+                </a>
+            </div>
+        <% } %>
+    </div>
+    <%- include('partials/footer') %>
+
+    <div>
+        <dialog id="authorModal" class="p-4 border-0 shadow rounded" style="max-width: 500px;" > 
+        <div id="authorInfo" class="text-center" >
+            <h2 id="authorName" class="text-primary mb-3"></h2>
+
+            <img id="authorPicture" class="img-fluid rounded mb-3" style="max-height: 250px; object-fit: contain;" alt="Author Picture">
+
+            <p><strong>Profession:</strong> <span id="authorProfession"></span></p>
+            <p><strong>Born:</strong> <span id="authorDob"></span> in <span id="authorCountry"></span></p>
+            <p><strong>Died:</strong> <span id="authorDod"></span></p>
+            <hr>
+            <p id="authorBio" class="text-start"></p>
+
+            <button id="closeModal" class="btn btn-secondary mt-3">Close</button>
+
+            
+        </div>
+        </dialog>
+
+    </div>
+ 
+    <script src="/js/quotes.js"></script>
+
+</body>
+</html>
+
+===== FILE: ./views/partials/head.ejs =====
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+    /* some custom styles */
+    body { background-color: #f8f9fa; }
+    .quote-card { border-left: 5px solid #0dcaf0; }
+    .author-name { font-style: italic; color: #6c757d; }
+</style>
+
+===== FILE: ./views/partials/footer.ejs =====
+<footer class="text-center p-4 mt-5 border-top bg-light">
+    <p class="text-muted">CST 336 Lab 6 (Famous Quotes) | 🧠 David Orta</p>
+</footer>
+
+===== FILE: ./views/author.ejs =====
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('partials/head') %>
+    <title>Author Profile</title>
+</head>
+<body>
+    <div class="container mt-4 text-center">
+        <h1 class="text-primary"><%= author.firstName %> <%= author.lastName %></h1>
+        <a href="/" class="btn btn-secondary mb-4">Back to Search</a>
+
+        <div class="card mx-auto p-4 shadow" style="max-width: 600px;">
+            <img src="<%= author.portrait %>" alt="Photo of <%= author.lastName %>" class="img-fluid rounded mb-3" style="max-height: 300px; object-fit: contain;">
+            
+            <p><strong>Profession:</strong> <%= author.profession %></p>
+            <p><strong>Born:</strong> <%= author.dob %> in <%= author.country %></p>
+            
+            <% if (author.dod) { %>
+                <p><strong>Died:</strong> <%= author.dod %></p>
+            <% } else { %>
+                <p><strong>Died:</strong> Present</p>
+            <% } %>
+
+            <hr>
+            <p class="text-start"><%= author.biography %></p>
+        </div>
+    </div>
+    <%- include('partials/footer') %>
+</body>
+</html>
+
