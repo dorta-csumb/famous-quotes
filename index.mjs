@@ -48,6 +48,8 @@ const pool = mysql.createPool({
 });
 
 
+
+
 //routes
 
 // ROUTE 1: home page(Populates Authors and Categories dropdowns)
@@ -62,6 +64,68 @@ app.get('/', async (req, res) => {
 
     res.render('home.ejs', { authors, categories });
 });
+
+// ============================================
+// LAB 7: authentication middleware & routes
+
+// Middleware to protect admin routes 
+function isAuthenticated(req, res, next) {
+    if (req.session.authenticated) {
+        next();
+    } else {
+        res.redirect('/login');
+    }
+}
+
+// Render the Login Page
+app.get('/login', (req, res) => {
+    res.render('login.ejs');
+});
+
+// Process Login Credentials using bcrypt
+app.post('/login', async (req, res) => {
+    let username = req.body.username;
+    let password = req.body.password;
+
+    try {
+        let sql = `SELECT * FROM admin WHERE username = ?`;
+        const [rows] = await pool.query(sql, [username]);
+
+        if (rows.length > 0) {
+            let hashPassword = rows[0].password;
+            let match = await bcrypt.compare(password, hashPassword);
+
+            if (match) {
+                // Set session variables
+                req.session.authenticated = true;
+                req.session.userFullName = rows[0].firstName + " " + rows[0].lastName;
+                
+                // Redirect to the protected dashboard
+                res.redirect('/admin'); 
+            } else {
+                res.render('login.ejs', { loginError: "Wrong credentials. Try again." });
+            }
+        } else {
+            res.render('login.ejs', { loginError: "Wrong credentials. Try again." });
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Database error during login");
+    }
+});
+
+// Logout Route 
+app.get('/logout', (req, res) => {
+    req.session.destroy();
+    res.redirect('/');
+});
+
+// Admin Dashboard (Protected by isAuthenticated middleware)
+app.get('/admin', isAuthenticated, (req, res) => {
+    res.send("<h2>Welcome to the Admin Dashboard!</h2><p>Authentication was successful! Phase 3 coming soon.</p>");
+});
+// ============
+
 
 // ROUTE 2: searching by keyword 
 app.get("/searchByKeyword", async(req, res) => {
