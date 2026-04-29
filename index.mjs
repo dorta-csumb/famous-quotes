@@ -120,12 +120,61 @@ app.get('/logout', (req, res) => {
     res.redirect('/');
 });
 
-// Admin Dashboard (Protected by isAuthenticated middleware)
-app.get('/admin', isAuthenticated, (req, res) => {
-    res.send("<h2>Welcome to the Admin Dashboard!</h2><p>Authentication was successful! Phase 3 coming soon.</p>");
-});
-// ============
 
+// ============================================
+// LAB 7: admin dashboard & delete routes
+
+// Admin Dashboard (Protected)
+app.get('/admin', isAuthenticated, async (req, res) => {
+    try {
+        // Fetch all authors
+        const [authors] = await pool.query('SELECT * FROM authors ORDER BY lastName');
+        
+        // Fetch all quotes (Join with authors to get the author's last name)
+        const[quotes] = await pool.query(`
+            SELECT q.quoteId, q.quote, a.lastName 
+            FROM quotes q 
+            JOIN authors a ON q.authorId = a.authorId 
+            ORDER BY q.quoteId DESC
+        `);
+        
+        // Pass both lists to the EJS view
+        res.render('admin.ejs', { authors, quotes });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error loading admin dashboard.");
+    }
+});
+
+// Delete Author Route
+app.post('/admin/author/delete', isAuthenticated, async (req, res) => {
+    let authorId = req.body.authorId;
+    try {
+        // Step A: Delete all quotes associated with this author to prevent database constraint errors
+        await pool.query('DELETE FROM quotes WHERE authorId = ?', [authorId]);
+        
+        // Step B: Delete the actual author
+        await pool.query('DELETE FROM authors WHERE authorId = ?', [authorId]);
+        
+        res.redirect('/admin');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error deleting author.");
+    }
+});
+
+// Delete Quote Route
+app.post('/admin/quote/delete', isAuthenticated, async (req, res) => {
+    let quoteId = req.body.quoteId;
+    try {
+        await pool.query('DELETE FROM quotes WHERE quoteId = ?', [quoteId]);
+        res.redirect('/admin');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error deleting quote.");
+    }
+});
+// ============================================
 
 // ROUTE 2: searching by keyword 
 app.get("/searchByKeyword", async(req, res) => {

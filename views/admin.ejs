@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('partials/head') %>
+    <title>Admin Dashboard</title>
+</head>
+<body>
+    <%- include('partials/nav') %>
+    
+    <div class="container mt-4">
+        <h1 class="text-primary mb-4">Admin Dashboard</h1>
+        
+        <div class="row">
+            <!-- AUTHORS COLUMN -->
+            <div class="col-md-6 mb-4">
+                <h3>Manage Authors</h3>
+                <a href="/admin/author/add" class="btn btn-success mb-3 fw-bold">+ Add New Author</a>
+                <ul class="list-group shadow-sm">
+                    <% for(let author of authors) { %>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <strong><%= author.firstName %> <%= author.lastName %></strong>
+                            <div>
+                                <!-- Edit button (I'll build this route in Phase 4) -->
+                                <a href="/admin/author/edit?authorId=<%= author.authorId %>" class="btn btn-sm btn-outline-primary">Edit</a>
+                                
+                                <!-- Delete form -->
+                                <form action="/admin/author/delete" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this author? This will also delete all their quotes!');">
+                                    <input type="hidden" name="authorId" value="<%= author.authorId %>">
+                                    <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                </form>
+                            </div>
+                        </li>
+                    <% } %>
+                </ul>
+            </div>
+
+            <!-- QUOTES COLUMN -->
+            <div class="col-md-6 mb-4">
+                <h3>Manage Quotes</h3>
+                <a href="/admin/quote/add" class="btn btn-success mb-3 fw-bold">+ Add New Quote</a>
+                <ul class="list-group shadow-sm">
+                    <% for(let q of quotes) { %>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <!-- text-truncate keeps long quotes from breaking the layout -->
+                            <span class="text-truncate d-inline-block" style="max-width: 200px;">
+                                "<%= q.quote %>" <br> <small class="text-muted">- <%= q.lastName %></small>
+                            </span>
+                            <div>
+                                <!-- Edit button (I'll build this route in Phase 4) -->
+                                <a href="/admin/quote/edit?quoteId=<%= q.quoteId %>" class="btn btn-sm btn-outline-primary">Edit</a>
+                                
+                                <!-- Delete form -->
+                                <form action="/admin/quote/delete" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this quote?');">
+                                    <input type="hidden" name="quoteId" value="<%= q.quoteId %>">
+                                    <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                </form>
+                            </div>
+                        </li>
+                    <% } %>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <%- include('partials/footer') %>
+</body>
+</html>
