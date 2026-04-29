@@ -37,8 +37,8 @@ let authorLinks = document.querySelectorAll(".authorNames");
                 // If the database has a Date of Death, display it
                 document.querySelector("#authorDod").textContent = data[0].dod.split("T")[0]; 
             } else {
-                // If the Date of Death is null, display the word "Present"
-                document.querySelector("#authorDod").textContent = "Present"; 
+                // If the Date of Death is null, display the word "Still Living"
+                document.querySelector("#authorDod").textContent = "Still Living"; 
             }
 
             //enable the modal
