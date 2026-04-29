@@ -24,7 +24,7 @@ app.use(express.urlencoded({extended:true}));
 const pool = mysql.createPool({
     host: "bqmayq5x95g1sgr9.cbetxkdyhwsb.us-east-1.rds.amazonaws.com",
     user: process.env.DB_USERNAME,
-    password: process.env.DB_PWD,
+    password: process.env.DB_PASSWORD,
     database: "he5dh1d9q9dzzeme",
     connectionLimit: 10,
     waitForConnections: true
